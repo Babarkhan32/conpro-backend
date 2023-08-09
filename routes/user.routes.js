@@ -1,9 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/user.controllers");
-router.get("/list", userController.getList);
-router.post("/add-user", userController.addUser);
-router.put("/update-user", userController.updateUser);
-router.delete("/delete-user", userController.deleteUser);
+const { addUser, createRequest, } = require("../controllers/user.controllers");
+const {getList, viewRequests}  = require("../controllers/adminController")
+
+
+
+// User Route
+router.route("/register").post(addUser);
+router.route("/create-request").post(createRequest)
+
+// Admin Route
+router.route("/admin/user-list").get(getList);
+router.route("/admin/request-list").get(viewRequests);
+
+
+
+// router.route("/login").post(loginUser);
+
+// router.put("/update-user", userController.updateUser);
+// router.route("/:id").delete(deleteUser);
 
 module.exports = router;

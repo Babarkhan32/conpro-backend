@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+mongoose.set('strictQuery', true);
+
 
 const options = {
   useNewUrlParser: true,
@@ -6,7 +8,7 @@ const options = {
 };
 
 mongoose
-  .connect("mongodb://localhost:27017/workshopDB", options)
+  .connect("mongodb://127.0.0.1:27017/CONPRO_BACKEND", options)
   .catch((error) =>
     console.error("error", "Mongoose connection Issue:", error)
   );
