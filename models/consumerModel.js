@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 
 
-const userSchema = new mongoose.Schema({
+const consumerSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "Please Enter Your Name"],
@@ -34,7 +34,6 @@ const userSchema = new mongoose.Schema({
       },
       role: {
         type: String,
-        enum: ['user', 'producer'],
         default: "user",
       },
       createdAt: {
@@ -47,14 +46,14 @@ const userSchema = new mongoose.Schema({
 })
 
 // Passord Double Hash
-userSchema.pre("save", async function(next){
+consumerSchema.pre("save", async function(next){
   if(!this.isModified("password")){
     next();
   }
   this.password = await bcrypt.hash(this.password,10)
 })
 
-userSchema.methods.getJWTToken = function(){
+consumerSchema.methods.getJWTToken = function(){
   return jwt.sign({id:this.id}, DSKJFBUKSEFBSDJFBSSEREEUFBEFBS,{
       expiresIn: process.env.JWT_EXPIRE,
   })
@@ -62,7 +61,7 @@ userSchema.methods.getJWTToken = function(){
 
 // Compare Password
 
-userSchema.methods.comparePassword = async function(enteredPassword){
+consumerSchema.methods.comparePassword = async function(enteredPassword){
   return await bcrypt.compare(enteredPassword, this.password)
 }
-module.exports = mongoose.model("User", userSchema)
+module.exports = mongoose.model("Consumer", consumerSchema)

@@ -21,7 +21,7 @@ const requestSchema = new mongoose.Schema({
     type: String,
     default: "pending",
   },
-  assignedProducerId: {
+  assignedProviderId: {
     type: mongoose.Schema.Types.ObjectId,
   },
   taskDetails: {
