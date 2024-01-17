@@ -3,18 +3,17 @@ const ErrorHandler = require("../utils/errorhandler")
 const Provider = require("../models/providerModel")
 const Request = require("../models/requestModel")
 
-// REGISTER 
-exports.addProvider = catchAsyncErrors(async(req,res,next)=> {
+// REGISTER
+exports.addProvider = catchAsyncErrors(async (req, res, next) => {
+  const { name, email, password, category } = req.body;
 
-    const {name, email, password} = req.body;
+  const provider = await Provider.create({ name, email, password, role: "provider", category });
 
-    const provider = await Provider.create({ name, email, password })
-    
-    res.status(201).json({
-        success:true,
-        message:"Provider created successfully",
-        provider
-    })
+  res.status(201).json({
+    success: true,
+    message: "Provider created successfully",
+    provider,
+  });
 });
 
 
@@ -37,37 +36,37 @@ exports.deleteProvider = catchAsyncErrors(async (req, res, next) => {
 
   // UPDATING A REQUEST AND ALSO PROVIDER HISTORY
   exports.completedRequest = catchAsyncErrors(async (req, res, next) => {
-    const providerId = req.params.providerId;
-    const requestId = req.params.requestId;
-  
-    const updatedRequest = await Request.findOneAndUpdate(
-      { _id: requestId },
-      { status: "completed", completedAt: new Date() },
-      { new: true }
-    );
-  
-    const updatedProvider = await Provider.findOneAndUpdate(
-      { _id: providerId },
-      {
-        $inc: { completedTasksCount: 1 }, // Increment the completedTasksCount by 1
-        $push: {
-          taskHistory: {
-            taskId: updatedRequest._id,
-            completedAt: new Date(),
-          },
+  const providerId = req.params.providerId;
+  const requestId = req.params.requestId;
+
+  const updatedRequest = await Request.findOneAndUpdate(
+    { _id: requestId },
+    { status: "completed", completedAt: new Date() },
+    { new: true }
+  );
+
+  const updatedProvider = await Provider.findOneAndUpdate(
+    { _id: providerId },
+    {
+      $inc: { completedTasksCount: 1 }, // Increment the completedTasksCount by 1
+      $push: {
+        taskHistory: {
+          taskId: updatedRequest._id,
+          completedAt: new Date(),
         },
       },
-      { new: true }
-    );
-  
-    res.status(200).json({
-      success: true,
-      message: "Request marked as completed and added to provider's taskHistory",
-      updatedRequest,
-      updatedProvider,
-    });
+    },
+    { new: true }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Request marked as completed and added to provider's taskHistory",
+    updatedRequest,
+    updatedProvider,
   });
-  
+});
+
   
   
 

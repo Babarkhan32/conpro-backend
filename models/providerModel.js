@@ -1,5 +1,6 @@
 const mongoose = require("mongoose")
 const validator = require("validator")
+const bcrypt = require("bcryptjs")
 
 
 const providerSchema = new mongoose.Schema({
@@ -71,5 +72,13 @@ const providerSchema = new mongoose.Schema({
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 })
+
+// Passord Double Hash
+providerSchema.pre("save", async function(next){
+    if(!this.isModified("password")){
+      next();
+    }
+    this.password = await bcrypt.hash(this.password,10)
+  })
 
 module.exports = mongoose.model("Provider", providerSchema)

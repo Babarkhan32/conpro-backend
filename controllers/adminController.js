@@ -27,53 +27,75 @@ exports.getProviderList = catchAsyncErrors(async (req, res) => {
 });
 
 // GETTING ALL REQUESTS
+
 exports.viewRequests = catchAsyncErrors(async (req, res, next) => {
+  try {
+    const query = {};
 
-  let requests = await Request.find();
+    if (req.query.requestDate) {
+      query.deadline = {
+        $gte: new Date(req.query.date), 
+        $lt: new Date(req.query.date + 'T23:59:59.999Z'), 
+      };
+    }
 
-  res.status(200).json({
-    success: true,
-    requests
-  })
-})
+    if (req.query.requestType) {
+      query.requestType = req.query.requestType;
+    }
+
+    // Use the query object to filter the requests
+    const requests = await Request.find(query);
+
+    res.status(200).json({
+      success: true,
+      requests,
+    });
+  } catch (error) {
+    // Handle any errors here
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+    });
+  }
+});
 
 
 // TASK ASSIGNED TO PRODUCER
 
-exports.assignRequest = catchAsyncErrors(async (req, res, next) => {
+// exports.assignRequest = catchAsyncErrors(async (req, res, next) => {
 
-  const requestId = req.params.requestId;
-  const providerId = req.params.providerId;
+//   const requestId = req.params.requestId;
+//   const providerId = req.params.providerId;
 
-  // Basic validation: Check if requestId and providerId are provided in the query
-  if (!requestId || !providerId) {
-    return next(new ErrorHandler("Both requestId and providerId are required", 400));
-  }
+//   // Basic validation: Check if requestId and providerId are provided in the query
+//   if (!requestId || !providerId) {
+//     return next(new ErrorHandler("Both requestId and providerId are required", 400));
+//   }
 
-  const request = await Request.findById(requestId)
-  const provider = await Provider.findById(providerId)
+//   const request = await Request.findById(requestId)
+//   const provider = await Provider.findById(providerId)
 
-  if (!request) {
-    return next(new ErrorHandler("Request  not found", 404))
-  }
+//   if (!request) {
+//     return next(new ErrorHandler("Request  not found", 404))
+//   }
 
-  if (!provider) {
-    return next(new ErrorHandler("Provider  not found", 404))
-  }
+//   if (!provider) {
+//     return next(new ErrorHandler("Provider  not found", 404))
+//   }
 
-  if (request.status !== "pending") {
-    return next(new ErrorHandler("Request is aleady assigned", 400))
-  }
+//   if (request.status !== "pending") {
+//     return next(new ErrorHandler("Request is aleady assigned", 400))
+//   }
 
-  request.status = "assigned";
-  request.assignedProviderId = providerId;
-  await request.save();
+//   request.status = "assigned";
+//   request.assignedProviderId = providerId;
+//   await request.save();
 
-  res.status(200).json({
-    success: true,
-    message: "Task assigned successfully"
-  })
-})
+//   res.status(200).json({
+//     success: true,
+//     message: "Task assigned successfully"
+//   })
+// })
 
 // CANCEL TASK 
 

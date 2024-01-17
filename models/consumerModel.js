@@ -53,11 +53,21 @@ consumerSchema.pre("save", async function(next){
   this.password = await bcrypt.hash(this.password,10)
 })
 
-consumerSchema.methods.getJWTToken = function(){
-  return jwt.sign({id:this.id}, DSKJFBUKSEFBSDJFBSSEREEUFBEFBS,{
-      expiresIn: process.env.JWT_EXPIRE,
+// consumerSchema.methods.getJWTToken = function(){
+//   return jwt.sign({id:this.id}, DSKJFBUKSEFBSDJFBSSEREEUFBEFBS,{
+//       expiresIn: process.env.JWT_EXPIRE,
+//   })
+// };
+
+// JWT TOKEN 
+consumerSchema.methods.getJWTToken = function () {
+  
+  return jwt.sign({ id: this.id }, process.env.SECRET, {
+      expiresIn: process.env.EXPIRE,
   })
 };
+
+console.log(process.env.JWT_EXPIRES)
 
 // Compare Password
 

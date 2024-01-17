@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose")
 
 const requestSchema = new mongoose.Schema({
@@ -27,6 +28,15 @@ const requestSchema = new mongoose.Schema({
   taskDetails: {
     type: String,
     required: true,
+  },
+  requestType: {
+    type: String, 
+    required: true,
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ["Transportation", "Field Service", "IT Support", "Education", "Food Delivery"],
   },
 });
 
