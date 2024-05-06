@@ -1,6 +1,8 @@
 const mongoose = require("mongoose")
 const validator = require("validator")
 const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+
 
 
 const providerSchema = new mongoose.Schema({
@@ -24,12 +26,7 @@ const providerSchema = new mongoose.Schema({
         select: false,
     },
     avatar: {
-        public_id: {
             type: String,
-        },
-        url: {
-            type: String,
-        },
     },
     role: {
         type: String,
@@ -39,10 +36,19 @@ const providerSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    assignedTasks: {
+        type: [String],
+        default: null
+    },
+    category: {
+        type: String,
+        required: true,
+        enum: ["Transportation", "Field Service", "IT Service", "Education", "Food Delivery"],
+    },
     completedTasksCount: {
         type: Number,
         default: 0,
-      },
+    },
     taskHistory: [
         {
             taskId: {
@@ -57,10 +63,7 @@ const providerSchema = new mongoose.Schema({
     ],
     reviews: [
         {
-            reviewer: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "User", 
-            },
+            consumerId: mongoose.Schema.Types.ObjectId,
             rating: {
                 type: Number,
                 min: 1,
@@ -74,11 +77,24 @@ const providerSchema = new mongoose.Schema({
 })
 
 // Passord Double Hash
-providerSchema.pre("save", async function(next){
-    if(!this.isModified("password")){
-      next();
+providerSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) {
+        next();
     }
-    this.password = await bcrypt.hash(this.password,10)
-  })
+    this.password = await bcrypt.hash(this.password, 10)
+})
+
+// JWT TOKEN 
+providerSchema.methods.providerGetJWTToken = function () {
+    return jwt.sign({ id: this.id }, process.env.SECRET);
+  };
+  
+
+
+// Compare Password
+
+providerSchema.methods.providerComparePassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password)
+}
 
 module.exports = mongoose.model("Provider", providerSchema)

@@ -2,10 +2,18 @@
 const mongoose = require("mongoose")
 
 const requestSchema = new mongoose.Schema({
-  consumerIdentifier: {
-        type: String, 
-        required: true,
-    },
+  consumerID:{
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  title: {
+    type: String,
+    required: true
+  },
   requestDate: {
     type: Date,
     default: Date.now,
@@ -14,13 +22,24 @@ const requestSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  time:{
+    type: String
+  },
   budget: {
     type: Number,
     required: true,
   },
   status: {
     type: String,
-    default: "pending",
+    required: true,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  assignedRequest: {
+    type: String,
+    required: true,
+    enum: ['pending', "assigned"],
+    default: "pending"
   },
   assignedProviderId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -30,14 +49,25 @@ const requestSchema = new mongoose.Schema({
     required: true,
   },
   requestType: {
-    type: String, 
-    required: true,
+    type: String,
+    required: false,
   },
   category: {
     type: String,
     required: true,
-    enum: ["Transportation", "Field Service", "IT Support", "Education", "Food Delivery"],
+    enum: ["Transportation", "Field Service", "IT Service", "Education", "Food Delivery"],
   },
+  providerApplied: {
+    type: [String],
+    default: null
+  },
+  completedStatus: {
+    type: String,
+    required: true,
+    enum: ["completed", "pending"],
+    default: "pending"
+  }
+
 });
 
 module.exports = mongoose.model("Request", requestSchema);

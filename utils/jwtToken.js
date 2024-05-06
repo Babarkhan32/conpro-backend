@@ -1,21 +1,23 @@
-// Creating Token and saving in cookie
-
 const sendToken = (user, statusCode, res) => {
+    let token;
 
-    const token = user.getJWTToken()
-
+    if (user.role === "provider") {
+        token = user.providerGetJWTToken();
+    } else {
+        token = user.consumerGetJWTToken();
+    }
+    
     const options = {
-        expires: new Date(
-            Date.now() + 5 * 24 * 60 * 60 * 1000
-        ),
-        httpOnly:true,
+        httpOnly: true,
+        sameSite: 'None', // Note the correct capitalization and syntax
     };
+    
 
-    res.status(statusCode).cookie("token", token,options).json({
-        success:true,
+    res.status(statusCode).cookie("token", token, options).json({
+        success: true,
         user,
         token
-    })
-}
+    });
+};
 
 module.exports = sendToken;

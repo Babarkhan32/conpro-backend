@@ -1,12 +1,24 @@
 const express = require("express")
-const { addProvider, deleteProvider, completedRequest } = require("../controllers/providerController")
-
+const {getRequests ,  deleteProvider, updateRequeststatus, applyOfProvider ,assignedTasksList, getNotifications,getProviderProfile} = require("../controllers/providerController")
+const { isAuthenticatedUser, authorizeRoles } = require("../middleware/auth");
 
 const router = express.Router()
 
-router.route("/register").post(addProvider);                // REGISTER PROVIDER
 router.route("/delete/:id").delete(deleteProvider);         // DELETE PROVIDER
-router.route("/:providerId/requests/:requestId/complete").put(completedRequest)
+
+router.route("/update-request-status/:id").put(isAuthenticatedUser, updateRequeststatus)
+
+router.route("/available-requests").get(isAuthenticatedUser, getRequests); 
+
+router.route("/provider-me").get(isAuthenticatedUser, getProviderProfile); 
+
+router.route("/apply-for-request/:id").put(isAuthenticatedUser, applyOfProvider)
+
+router.route("/assigned-tasks-list").get(isAuthenticatedUser, assignedTasksList)
+
+router.route("/notification-list").get(isAuthenticatedUser, getNotifications)
+
+
 
 
 

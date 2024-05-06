@@ -1,37 +1,25 @@
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/errorhandler");
 const Consumer = require("../models/consumerModel");
-const Request = require("../models/requestModel")
-const sendToken = require("../utils/jwtToken")
+const Provider = require("../models/providerModel");
+const Request = require("../models/requestModel");
+const Notification = require("../models/notificationModel");
+const sendToken = require("../utils/jwtToken");
 
+exports.getConsumerProfile = catchAsyncErrors(async (req, res, next) => {
+  const id = req.id;
 
-// // Register a Consumer
-// exports.addConsumer = catchAsyncErrors(async (req, res) => {
+  const consumer = await Consumer.findById(id);
 
-//   const user = await Consumer.create(req.body);
-
-//   sendToken(user,201,res)
-// })
-
-exports.addConsumer = catchAsyncErrors(async(req,res,next)=>{
-
-  const {name, email, password} = req.body;
-
-  const user = await Consumer.create({
-      name,email,password
-  });
-
-  res.status(201).json({
+  res.status(200).json({
     success: true,
-    message: "Consumer created successfully",
-    user,
-  });})
-
+    consumer,
+  });
+});
 
 // Delete a Consumer
 exports.deleteConsumer = catchAsyncErrors(async (req, res, next) => {
-
-  const deletedConsumer = await Consumer.findById(req.params.id)
+  const deletedConsumer = await Consumer.findById(req.params.id);
 
   if (!deletedConsumer) {
     return next(new ErrorHandler("User not found", 404));
@@ -41,77 +29,185 @@ exports.deleteConsumer = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: "Consumer deleted successfully"
-  })
+    message: "Consumer deleted successfully",
+  });
 });
 
-// Creating Consumer Request
 exports.createRequest = catchAsyncErrors(async (req, res, next) => {
+  const id = req.id;
+  const { email, title, category, deadline, budget, taskDetails } = req.body;
 
-  const { consumerIdentifier, catagory, deadline, budget, taskDetails } = req.body;
+  const consumer = await Consumer.findOne({ email });
 
-  const consumer = await Consumer.findOne({ email: consumerIdentifier });
-
-  // Validation for Consumer
+  // Validate if consumer exists
   if (!consumer) {
-    return next(new ErrorHandler("Consumer not Found", 400))
+    return next(new ErrorHandler("Consumer not found", 400));
   }
 
-  // Validation for catagory
-  if(!catagory || !isValidCatagory(catagory)){
-    return next(new ErrorHandler("Invalid Category", 400));
-
-  }
-  // VALIDATION FOR DEADLINE TIME
-  const now = new Date();
-  const minimumDeadline = new Date(now.getTime() + 1 * 60 * 60 * 1000); // Adding 1 hour
-
-  const providedDeadline = new Date(deadline);
-
-  if (providedDeadline <= minimumDeadline) {
-    return next(new ErrorHandler("Invalid Deadline", 400));
+  // Validate category
+  if (!category) {
+    return next(new ErrorHandler("Invalid category", 400));
   }
 
+  const date = new Date(deadline);
+
+  const dateOnly = date.toDateString();
+  const timeOnly = date.toLocaleTimeString();
+
+  // Create a new request
   const newRequest = new Request({
-    consumerIdentifier,
-    catagory,
-    deadline: providedDeadline,
+    consumerID: id,
+    email,
+    title,
+    category,
+    deadline: dateOnly, 
+    time:timeOnly,
     budget,
     taskDetails,
-  })
+  });
 
   const savedRequest = await newRequest.save();
 
+  // Assuming you are updating consumer's previous requests
+  const prevTaskId = savedRequest._id.toString();
+  consumer.prevRequests.push(prevTaskId);
+  await consumer.save();
+
   res.status(201).json({
     success: true,
-    savedRequest
-  })
+    savedRequest,
+    message: "Request created successfully",
+  });
+});
 
-})
 
-// Login for Consumer 
-exports.loginConsumer = catchAsyncErrors(async (req, res, next) => {
-  const { email, password } = req.body;
+exports.getNotifications = catchAsyncErrors(async (req, res, next) => {
+  const id = req.id;
 
-  if (!email || !password) {
-    return next(new ErrorHandler("Please enter Email and Password", 400))
+  const notification = await Notification.find({ consumerId: id });
+
+  res.status(200).json({
+    success: true,
+    notification,
+  });
+});
+
+exports.getApprovedRequests = catchAsyncErrors(async (req, res, next) => {
+  const consumerid = req.id;
+
+  const consumer = await Consumer.findById(consumerid);
+
+  const prevRequestsId = consumer.prevRequests.map((objectId) =>
+    objectId.toString()
+  );
+
+  const requests = await Request.find({
+    _id: {
+      $in: prevRequestsId,
+    },
+    status: "approved",
+    assignedRequest: "pending",
+  });
+
+  res.status(200).json({
+    success: true,
+    requests,
+  });
+});
+
+exports.getAssignedRequests = catchAsyncErrors(async (req, res, next) => {
+  const consumerid = req.id;
+
+  const consumer = await Consumer.findById(consumerid);
+
+  const prevRequestsId = consumer.prevRequests.map((objectId) =>
+    objectId.toString()
+  );
+
+  const requests = await Request.find({
+    _id: {
+      $in: prevRequestsId,
+    },
+    status: "approved",
+    assignedRequest: "assigned",
+    completedStatus: "pending",
+  });
+
+  res.status(200).json({
+    success: true,
+    requests,
+  });
+});
+
+exports.getCompletedRequests = catchAsyncErrors(async (req, res, next) => {
+  const consumerid = req.id;
+
+  const consumer = await Consumer.findById(consumerid);
+
+  const prevRequestsId = consumer.prevRequests.map((objectId) =>
+    objectId.toString()
+  );
+
+  const requests = await Request.find({
+    _id: {
+      $in: prevRequestsId,
+    },
+    status: "approved",
+    assignedRequest: "assigned",
+    completedStatus: "completed",
+  });
+
+  res.status(200).json({
+    success: true,
+    requests,
+  });
+});
+
+exports.postReview = catchAsyncErrors(async (req, res, next) => {
+  const { rating, comment } = req.body;
+
+  const consumerid = req.id; 
+  const requestid = req.params.id;
+
+  const request = await Request.findById(requestid);
+  if (!request) {
+    return next(new Error("Request not found"));
   }
 
-  const consumer = await Consumer.findOne({ email }).select("+password")
+  const providerid = request.assignedProviderId;
 
-  const isPasswordMatched = await consumer.comparePassword(password);
-
-  if (!consumer || !isPasswordMatched) {
-    return next(new ErrorHandler("Invalid Email or Password", 401))
+  const provider = await Provider.findById(providerid);
+  if (!provider) {
+    return next(new Error("Provider not found"));
   }
-  console.log("does it reach here")
 
-  return sendToken(consumer, 200, res);
+  // Check if the consumer has already reviewed the provider for this request
+  const hasReviewed = provider.reviews.some((review) => {
+    return review.consumerId.toString() === consumerid.toString();
+  });
 
-})
 
-function isValidCatagory(catagory){
-  // Checking for predefined catagories
-  const validCategories = ["Transportation", "Field Service", "IT Support", "Education", "Food Delivery"];
-  return validCategories.includes(category);
-}
+  if (hasReviewed) {
+    return res.status(400).json({
+      success: false,
+      message: "You have already reviewed this provider for the same request.",
+    });
+  }
+
+  const newReview = {
+    consumerId: consumerid, 
+    rating,
+    comment,
+  };
+
+  provider.reviews.push(newReview);
+
+  await provider.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Review added successfully",
+  });
+});
+
+exports.updateConsumerProfile = catchAsyncErrors(async (req, res, next) => {});
